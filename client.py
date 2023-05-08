@@ -2,8 +2,35 @@ from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import tkinter
 from tkinter import messagebox,ttk
+import json 
+import struct
 
-id_table = 0
+def send_msg(sock, msg):
+    # Prefix each message with a 4-byte length (network byte order)
+    msg = struct.pack('>I', len(msg)) + msg.encode()
+    sock.sendall(msg)
+
+def recv_msg(sock):
+    # Read message length and unpack it into an integer
+    raw_msglen = recvall(sock, 4)
+    if not raw_msglen:
+        return None
+    msglen = struct.unpack('>I', raw_msglen)[0]
+    print(msglen)
+    # Read the message data
+    return recvall(sock, msglen)
+
+
+def recvall(sock, n):
+    # Helper function to recv n bytes or return None if EOF is hit
+    data = bytearray()
+    while len(data) < n:
+        packet = sock.recv(n - len(data))
+        if not packet:
+            return None
+        data.extend(packet)
+    return data
+
 
 def receive():
     """Handles receiving of messages."""
@@ -11,7 +38,7 @@ def receive():
 
     while True:
         try:
-            msg = client_socket.recv(BUFSIZ).decode("utf8")
+            msg = recv_msg(client_socket).decode('utf-8')
             print(msg)
             if msg == "{quit}":
                 messagebox.showinfo("Notification", "Server has just stopped")
@@ -20,28 +47,33 @@ def receive():
             elif msg == "{nomatchinglocationfound}":
                 messagebox.showinfo("Notification", "No matching location found")
             else:
-                data = eval(msg) # convert string to object
-                city = data["location"]["name"]
-                temp = str(data["current"]["temp_c"])
-                condition = data["current"]["condition"]["text"]
-                table.insert(parent='',index='end',iid=id_table,text='',
-                values=(city,temp,condition))
-                id_table=id_table+1
+                try:
+                    item = json.loads(msg)
+                    # for item in data:
+                    table.insert(parent='',index='end',iid=id_table,text='',
+                    values=(item["city"],item["temperature"],item["condition"]))
+                    id_table=id_table+1
+                except:
+                    continue
+               
+               
         except OSError:  # Possibly client has left the chat.
             break
 
 
 def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
+    if len(table.get_children()) > 10:
+        clear_all_table()
     msg = my_msg.get()
     my_msg.set("")  # Clears input field.
-    client_socket.send(bytes(msg, "utf8"))
-    table.delete()
+    send_msg(client_socket, msg)
     if msg == "{quit}":
         client_socket.close()
         root.quit()
 
 def get_all_city():
+    clear_all_table()
     my_msg.set("{getallcity}")
     send()
 
@@ -51,6 +83,11 @@ def on_closing(event=None):
     send()
 
 ####################### GUI ##########################
+# Define a function to clear all the items present in Treeview
+def clear_all_table():
+   for item in table.get_children():
+      table.delete(item)
+
 root = tkinter.Tk()
 root.title("Weather Client")
 #### LEFT_FRAME ####
@@ -63,7 +100,7 @@ table.column("#0", width=0,  stretch=tkinter.NO)
 # table.column("id",anchor=tkinter.CENTER,width=50,minwidth= 50)
 table.column("city",anchor=tkinter.CENTER,width=120,minwidth= 100)
 table.column("temperature",anchor=tkinter.CENTER,width=120,minwidth= 100)
-table.column("condition",anchor=tkinter.CENTER,width=120,minwidth= 100)
+table.column("condition",anchor=tkinter.CENTER,width=200,minwidth= 150)
 
 table.heading("#0",text="",anchor=tkinter.CENTER)
 # table.heading("id",text="Id",anchor=tkinter.CENTER)
@@ -95,9 +132,8 @@ root.protocol("WM_DELETE_WINDOW", on_closing)
 
 #----Now comes the sockets part----
 HOST = '127.0.0.1' 
-PORT = 33000
+PORT = 33115
 
-BUFSIZ = 1024
 ADDR = (HOST, PORT)
 
 client_socket = socket(AF_INET, SOCK_STREAM)
