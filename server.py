@@ -17,6 +17,60 @@ def get_database():
     print('connected db')
     return client['cityweather']
 
+def seeding():
+    if collection.count_documents({}) == 0:
+        item1 = {
+            "city" : "Paris",
+            "temperature" : "20",
+            "condition" : "Sunny",
+        }
+        item2 = {
+            "city" : "Hanoi",
+            "temperature" : "20",
+            "condition" : "Sunny",
+        }
+        item3 = {
+            "city" : "Vung Tau",
+            "temperature" : "20",
+            "condition" : "Sunny",
+        }
+        item4 = {
+            "city" : "Da Nang",
+            "temperature" : "20",
+            "condition" : "Sunny",
+        }
+        item5 = {
+            "city" : "Hai Phong",
+            "temperature" : "20",
+            "condition" : "Sunny",
+        }
+        item6 = {
+            "city" : "Nha Trang",
+            "temperature" : "20",
+            "condition" : "Sunny",
+        }
+        item7 = {
+            "city" : "Yen Bai",
+            "temperature" : "20",
+            "condition" : "Sunny",
+        }
+        item8 = {
+            "city" : "Binh Dinh",
+            "temperature" : "20",
+            "condition" : "Sunny",
+        }
+        item9 = {
+            "city" : "New York",
+            "temperature" : "20",
+            "condition" : "Sunny",
+        }
+        item10 = {
+            "city" : "Tokyo",
+            "temperature" : "20",
+            "condition" : "Sunny",
+        }
+        collection.insert_many([item1,item2,item3,item4,item5,item6,item7,item8,item9,item10])
+
 def handle_command_line():
     while True:
         inputValue= input('Nhap lenh:')
@@ -130,6 +184,7 @@ if __name__ == "__main__":
 
     dbname = get_database()
     collection = dbname["weather"]
+    seeding()
 
     print("Waiting for connection...")
 
