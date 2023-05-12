@@ -11,10 +11,14 @@ API_KEY = "ff53ef5d7a2949fe81d174746230705"
 def get_database():
 
     # Provide the mongodb atlas url to connect python to mongodb using pymongo
-    CONNECTION_STRING = "mongodb://localhost:27017/"
+    CONNECTION_STRING = "mongodb://localhost:"
+
+    dbPort= input('Input localhost mongodb port: ')
+    # 27017
+    CONNECTION_STRING+= dbPort + "/"
+    print('Connecting to %s...' % CONNECTION_STRING)
     # Create a connection using MongoClient. You can import MongoClient or use pymongo.MongoClient
     client = MongoClient(CONNECTION_STRING)
-    print('connected db')
     return client['cityweather']
 
 def seeding():
@@ -73,7 +77,7 @@ def seeding():
 
 def handle_command_line():
     while True:
-        inputValue= input('Nhap lenh:')
+        inputValue= input('Input command line: ')
         if inputValue == 'exit':
             for sock in addresses:
                 send_msg(sock,"{quit}")
@@ -181,10 +185,15 @@ SERVER.bind(ADDR)
 
 if __name__ == "__main__":
     SERVER.listen()
-
-    dbname = get_database()
-    collection = dbname["weather"]
-    seeding()
+    while True:
+        try:
+            dbname = get_database()
+            collection = dbname["weather"]
+            seeding()
+            print("Connected DB")
+            break
+        except:
+            print('Cannot connect to mongodb')
 
     print("Waiting for connection...")
 
